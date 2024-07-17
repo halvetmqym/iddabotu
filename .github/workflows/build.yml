@@ -29,8 +29,8 @@ jobs:
     - name: Install dependencies
       run: |
         pip install --upgrade pip
+        apt-get update && apt-get install -y python3-distutils  # distutils kurulumu
         pip install buildozer cython
-        python3 -m pip install distutils
 
     - name: Install Android SDK Command Line Tools
       run: |
