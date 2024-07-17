@@ -29,13 +29,22 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-buildozer-
 
-    - name: Build with Buildozer
+    - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y python3-pip openjdk-8-jdk unzip
+        sudo apt-get install -y python3-pip openjdk-8-jdk unzip wget
         pip install --upgrade pip
         pip install Cython==0.29.21 virtualenv
         pip install kivy buildozer
+        mkdir -p ~/.buildozer/android/platform/android-sdk
+        cd ~/.buildozer/android/platform/android-sdk
+        wget https://dl.google.com/android/repository/commandlinetools-linux-6609375_latest.zip -O commandlinetools.zip
+        unzip commandlinetools.zip -d cmdline-tools
+        yes | cmdline-tools/bin/sdkmanager --sdk_root=$HOME/.buildozer/android/platform/android-sdk --licenses
+        cmdline-tools/bin/sdkmanager --sdk_root=$HOME/.buildozer/android/platform/android-sdk "platforms;android-30" "build-tools;30.0.3" "platform-tools"
+
+    - name: Build with Buildozer
+      run: |
         buildozer -v android debug
 
     - name: Upload artifacts
