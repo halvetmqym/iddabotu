@@ -16,37 +16,42 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v2
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v1
+    - name: Get Date
+      run: echo "DATE=`date`" >> $GITHUB_ENV
 
-    - name: Cache Docker layers
+    - name: Cache Buildozer global directory
       uses: actions/cache@v2
       with:
-        path: /tmp/.buildx-cache
-        key: ${{ runner.os }}-buildx-${{ github.sha }}
+        path: |
+          ~/.buildozer
+          ~/.cache/pip
+        key: ${{ runner.os }}-buildozer-${{ hashFiles('**/requirements.txt') }}
         restore-keys: |
-          ${{ runner.os }}-buildx-
+          ${{ runner.os }}-buildozer-
 
-    - name: Build Docker image
+    - name: Build with Buildozer
       run: |
-        docker build --tag kivy-build .
+        sudo apt-get update
+        sudo apt-get install -y python3-pip openjdk-8-jdk unzip
+        pip install --upgrade pip
+        pip install Cython==0.29.21 virtualenv
+        pip install kivy buildozer
+        buildozer -v android debug
 
-    - name: Run Docker container
-      run: |
-        docker run --name kivy-build-container kivy-build
-
-    - name: Copy APK from Docker container
-      run: |
-        docker cp kivy-build-container:/app/bin/. ./bin
-
-    - name: Upload APK
+    - name: Upload artifacts
       uses: actions/upload-artifact@v2
       with:
         name: myapp
         path: bin/*.apk
 
-    - name: Clean up
-      run: |
-        docker rm kivy-build-container
-        docker rmi kivy-build
-        
+    - name: Post Run actions/cache@v2
+      if: always()
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.buildozer
+          ~/.cache/pip
+        key: ${{ runner.os }}-buildozer-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-buildozer-
+          
