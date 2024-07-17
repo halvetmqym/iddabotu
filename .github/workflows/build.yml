@@ -1,8 +1,12 @@
-name: Build Kivy APK
+name: Build APK
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
   build:
@@ -12,49 +16,37 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v2
 
-    - name: Set up JDK 8
-      uses: actions/setup-java@v1
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+
+    - name: Cache Docker layers
+      uses: actions/cache@v2
       with:
-        java-version: 8
+        path: /tmp/.buildx-cache
+        key: ${{ runner.os }}-buildx-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-buildx-
 
-    - name: Get date
-      id: get-date
-      run: echo "::set-output name=date::$(date -u '+%Y%m%d')"
-
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.x
-
-    - name: Install dependencies
+    - name: Build Docker image
       run: |
-        pip install --upgrade pip
-        apt-get update && apt-get install -y python3-distutils  # distutils kurulumu
-        pip install buildozer cython
+        docker build --tag kivy-build .
 
-    - name: Install Android SDK Command Line Tools
+    - name: Run Docker container
       run: |
-        mkdir -p $HOME/android-sdk/cmdline-tools
-        cd $HOME/android-sdk/cmdline-tools
-        wget https://dl.google.com/android/repository/commandlinetools-linux-6858069_latest.zip
-        unzip commandlinetools-linux-6858069_latest.zip -d $HOME/android-sdk/cmdline-tools
-        mv $HOME/android-sdk/cmdline-tools/cmdline-tools $HOME/android-sdk/cmdline-tools/tools
-        yes | $HOME/android-sdk/cmdline-tools/tools/bin/sdkmanager --licenses
-        $HOME/android-sdk/cmdline-tools/tools/bin/sdkmanager "platform-tools" "platforms;android-29" "build-tools;29.0.3" "ndk;21.3.6528147"
+        docker run --name kivy-build-container kivy-build
 
-    - name: Set environment variables
+    - name: Copy APK from Docker container
       run: |
-        echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
-        echo "PATH=$PATH:$HOME/android-sdk/platform-tools" >> $GITHUB_ENV
-        echo "PATH=$PATH:$HOME/android-sdk/cmdline-tools/tools/bin" >> $GITHUB_ENV
-        echo "PATH=$PATH:$HOME/android-sdk/ndk/21.3.6528147" >> $GITHUB_ENV
-
-    - name: Build with Buildozer
-      run: buildozer android debug
+        docker cp kivy-build-container:/app/bin/. ./bin
 
     - name: Upload APK
       uses: actions/upload-artifact@v2
       with:
-        name: package
+        name: myapp
         path: bin/*.apk
+
+    - name: Clean up
+      run: |
+        docker rm kivy-build-container
+        docker rmi kivy-build
         
