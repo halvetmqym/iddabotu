@@ -30,7 +30,6 @@ jobs:
       run: |
         pip install --upgrade pip
         pip install buildozer cython
-        pip install distutils
 
     - name: Install Android SDK Command Line Tools
       run: |
