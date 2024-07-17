@@ -1,13 +1,13 @@
 [app]
 
 # (str) Title of your application
-title = My Application
+title = iddaanaliz
 
 # (str) Package name
-package.name = myapp
+package.name = analiz
 
 # (str) Package domain (needed for android/ios packaging)
-package.domain = org.test
+package.domain = com.halvety.iddanaliz
 
 # (str) Source code where the main.py live
 source.dir = .
@@ -37,7 +37,7 @@ version = 0.1
 
 # (list) Application requirements
 # comma separated e.g. requirements = sqlite3,kivy
-requirements = python3,kivy
+requirements = python3,kivy,requests,beautifulsoup4,pyfiglet,googletrans,time
 
 # (str) Custom source folders for requirements
 # Sets custom source for any requirements with recipes
