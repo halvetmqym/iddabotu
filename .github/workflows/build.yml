@@ -1,58 +1,61 @@
-name: Build Kivy App
+name: Build Kivy APK
 
 on:
   push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - name: Checkout repository
+      uses: actions/checkout@v2
 
-    - name: Set up Python
-      uses: actions/setup-python@v2
+    - name: Set up JDK 8
+      uses: actions/setup-java@v1
       with:
-        python-version: '3.x'  # Python sürümünü belirtin
+        java-version: 8
 
-    - name: Install build dependencies
+    - name: Get date
+      id: get-date
+      run: echo "::set-output name=date::$(date -u '+%Y%m%d')"
+
+    - name: Install dependencies
+      run: sudo apt-get install -y python3-setuptools python3-pip build-essential libssl-dev libffi-dev libgmp-dev
+
+    - name: Cache Buildozer global directory
+      uses: actions/cache@v2
+      with:
+        path: .buildozer
+        key: buildozer-global-${{ hashFiles('buildozer.spec') }}
+
+    - name: Install Buildozer
+      run: |
+        pip install --upgrade pip
+        pip install buildozer cython
+        
+    - name: Install Android SDK
       run: |
         sudo apt-get update
-        sudo apt-get install -y \
-          python3-pip \
-          build-essential \
-          git \
-          python3 \
-          python3-dev \
-          ffmpeg \
-          libsdl2-dev \
-          libsdl2-image-dev \
-          libsdl2-mixer-dev \
-          libsdl2-ttf-dev \
-          libportmidi-dev \
-          libswscale-dev \
-          libavformat-dev \
-          libavcodec-dev \
-          zlib1g-dev
-        python3 -m pip install --upgrade pip
+        sudo apt-get install -y wget unzip
+        wget "https://dl.google.com/android/repository/commandlinetools-linux-6858069_latest.zip" -O commandlinetools.zip
+        sudo mkdir -p /usr/local/lib/android/sdk
+        sudo unzip commandlinetools.zip -d /usr/local/lib/android/sdk/cmdline-tools
+        sudo /usr/local/lib/android/sdk/cmdline-tools/tools/bin/sdkmanager --sdk_root=/usr/local/lib/android/sdk --install "platform-tools" "platforms;android-29" "build-tools;29.0.3" "ndk;21.3.6528147"
 
-    - name: Install Kivy
+    - name: Set environment variables
       run: |
-        python3 -m pip install kivy[base] kivy_examples
+        echo "export ANDROID_HOME=/usr/local/lib/android/sdk" >> $GITHUB_ENV
+        echo "export PATH=$PATH:/usr/local/lib/android/sdk/platform-tools" >> $GITHUB_ENV
+        echo "export PATH=$PATH:/usr/local/lib/android/sdk/cmdline-tools/tools/bin" >> $GITHUB_ENV
+        echo "export PATH=$PATH:/usr/local/lib/android/sdk/ndk/21.3.6528147" >> $GITHUB_ENV
 
     - name: Build with Buildozer
-      uses: ArtemSBulgakov/buildozer-action@v1
-      with:
-        command: buildozer android debug
-        buildozer_version: master
+      run: buildozer android debug
 
     - name: Upload APK
       uses: actions/upload-artifact@v2
       with:
         name: package
-        path: path/to/your/build/output
+        path: bin/*.apk
