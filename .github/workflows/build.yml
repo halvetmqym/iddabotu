@@ -32,7 +32,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y python3-pip openjdk-8-jdk unzip wget
+        sudo apt-get install -y python3-pip openjdk-8-jdk unzip wget libncurses5 libstdc++6
         pip install --upgrade pip
         pip install Cython==0.29.21 virtualenv
         pip install kivy buildozer
@@ -47,7 +47,7 @@ jobs:
 
     - name: Build with Buildozer
       run: |
-        buildozer -v android debug
+        buildozer -v android debug --log_level 2
 
     - name: Upload artifacts
       uses: actions/upload-artifact@v2
