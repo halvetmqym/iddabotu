@@ -1,42 +1,51 @@
-name: CI
+name: Build APK
 
 on:
-	push:
-		branches: [ main]
-
+  push:
+    branches: [main]
 
 jobs:
-	build:
-		runs-on: ubuntu-latest
-		steps:
-		   - uses: actions/checkout@v2
+  build:
+    runs-on: ubuntu-latest
 
-		# used to cache dependencies with a
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
-		   - name: Get Date
-		   id: get-date
-		   
-		   run: |echo "::set-output name=date::$(/ bin/date -u "+%Y%m%d")"
-		   shell: bash
-		   
-		 - name: Cache Buildozer global directory
-		   uses: actions/cache@v2
-		   with:
-		   	path: .buildozer_global
-		   	key: buildozer-global-${{hashFiles('buildozer.spec') }} # Replace with your path
-		   	
-		     - uses: actions/cache@v2
-		     with:
-		     	path: buildozer
-		     	key: $((runner.os 1)-5{(steps.ger-date.outputs.date }}-5{{ hashFiles('buildozer.spec) }}
-		       - name: Build with Buildozer
-		         uses: ArtemSBulgakov/buildozer-action@v1
-		         id: buildozer
-		         with:
-		         	command: buildozer android debug
-		         	buildozer_version: master
-		         name: Upload artifacts
-		         uses: actions/upload-artifact@v2
-		         with:
-		         	name: package
-		         	path: ${{ steps.buildozer.outputs.filename }}
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.x  # Replace with your Python version
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            ccache \
+            git \
+            libffi-dev \
+            libsdl2-dev \
+            libssl-dev \
+            libjpeg-dev \
+            libxml2-dev \
+            libxslt1-dev \
+            python3-dev \
+            zlib1g-dev
+          pip install --upgrade pip
+          pip install -r requirements.txt  # Adjust based on your project's requirements
+
+      - name: Install Buildozer
+        run: |
+          git clone https://github.com/kivy/buildozer.git
+          cd buildozer
+          sudo python3 setup.py install
+
+      - name: Build with Buildozer
+        run: buildozer android debug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v2
+        with:
+          name: my-app-debug
+          path: ./bin/myapp-*-debug.apk
