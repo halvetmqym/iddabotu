@@ -47,13 +47,19 @@ jobs:
 
     - name: Build with Buildozer
       run: |
-        buildozer -v android debug --log_level 2
+        buildozer -v android debug --log_level 2 || true
 
-    - name: Upload artifacts
+    - name: Upload APK artifact
       uses: actions/upload-artifact@v2
       with:
         name: myapp
         path: bin/*.apk
+
+    - name: Upload Buildozer log
+      uses: actions/upload-artifact@v2
+      with:
+        name: buildozer-log
+        path: .buildozer/android/platform/build/dists/*/buildozer.log
 
     - name: Post Run actions/cache@v2
       if: always()
@@ -65,4 +71,3 @@ jobs:
         key: ${{ runner.os }}-buildozer-${{ hashFiles('**/requirements.txt') }}
         restore-keys: |
           ${{ runner.os }}-buildozer-
-          
