@@ -28,6 +28,8 @@ jobs:
 
     - name: Install dependencies
       run: |
+        apt-get update
+        apt-get install -y python3-distutils
         pip install --upgrade pip
         pip install buildozer cython
 
