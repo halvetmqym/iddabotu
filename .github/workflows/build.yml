@@ -30,7 +30,6 @@ jobs:
       run: |
         python3 -m pip install --upgrade pip
         python3 -m pip install buildozer cython
-        python3 -m pip install distutils  # distutils modülü ekleniyor
 
     - name: Install Android SDK Command Line Tools
       run: |
